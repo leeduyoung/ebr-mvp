@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{layout/default :: layout(~{::content})}">
+    <div th:fragment="content">
+        <div class="mb-4">
+            <h2><i class="bi bi-play-circle me-2"></i>Batch Execution</h2>
+            <p class="text-muted">Select a batch to execute production steps</p>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="row">
+            <div th:each="batch : ${batches}" class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span th:text="${batch.batchNumber}"></span>
+                        <span class="badge"
+                              th:classappend="${batch.status.name() == 'RELEASED'} ? 'bg-primary' : 'bg-warning text-dark'"
+                              th:text="${batch.status}"></span>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title" th:text="${batch.recipe.name}"></h6>
+                        <p class="card-text text-muted small" th:text="${batch.recipe.code}"></p>
+
+                        <div class="mb-3">
+                            <strong>Progress:</strong>
+                            <div class="progress mt-1" style="height: 25px;">
+                                <div class="progress-bar bg-success"
+                                     th:style="'width: ' + ${batch.progressPercentage} + '%'"
+                                     th:text="${batch.completedStepCount + ' / ' + batch.totalStepCount + ' steps'}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div th:if="${batch.plannedQuantity != null}" class="small text-muted mb-2">
+                            <strong>Quantity:</strong>
+                            <span th:text="${batch.plannedQuantity + ' ' + batch.quantityUnit}"></span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a th:href="@{/execution/{id}(id=${batch.id})}" class="btn btn-success w-100">
+                            <i class="bi bi-play-fill me-1"></i>Execute
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${#lists.isEmpty(batches)}" class="col-12">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    No batches available for execution. Batches must be in RELEASED or IN_PROGRESS status.
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

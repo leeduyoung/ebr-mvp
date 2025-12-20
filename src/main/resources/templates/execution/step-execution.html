@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{layout/default :: layout(~{::content})}">
+    <div th:fragment="content">
+        <!-- Alerts -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Header -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a th:href="@{/execution}">Execution</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/execution/{id}(id=${batch.id})}" th:text="${batch.batchNumber}"></a>
+                </li>
+                <li class="breadcrumb-item active" th:text="${'Step ' + step.stepNumber}"></li>
+            </ol>
+        </nav>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-primary me-2" th:text="${'Step ' + step.stepNumber}"></span>
+                            <span th:text="${step.recipeStep.name}"></span>
+                        </div>
+                        <span class="badge"
+                              th:classappend="${step.status.name() == 'PENDING'} ? 'bg-secondary' :
+                                              (${step.status.name() == 'IN_PROGRESS'} ? 'bg-warning text-dark' :
+                                              (${step.status.name() == 'COMPLETED'} ? 'bg-success' : 'bg-info'))"
+                              th:text="${step.status}"></span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Step Description -->
+                        <div th:if="${step.recipeStep.description}" class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <span th:text="${step.recipeStep.description}"></span>
+                        </div>
+
+                        <!-- Required Qualifications Warning -->
+                        <div th:if="${!step.recipeStep.requiredQualifications.isEmpty()}" class="mb-3">
+                            <strong>Required Qualifications:</strong>
+                            <span th:each="q : ${step.recipeStep.requiredQualifications}"
+                                  class="badge bg-warning text-dark me-1"
+                                  th:text="${q.name}"></span>
+                        </div>
+
+                        <!-- Validation Errors -->
+                        <div th:if="${validationErrors != null && !validationErrors.isEmpty()}"
+                             class="alert alert-danger">
+                            <strong><i class="bi bi-exclamation-triangle me-2"></i>Cannot start this step:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li th:each="error : ${validationErrors}" th:text="${error}"></li>
+                            </ul>
+                        </div>
+
+                        <!-- PENDING: Start Button -->
+                        <div th:if="${step.status.name() == 'PENDING'}">
+                            <form th:if="${canStart}"
+                                  th:action="@{/execution/{batchId}/steps/{stepNum}/start(batchId=${batch.id}, stepNum=${step.stepNumber})}"
+                                  method="post">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-play-fill me-2"></i>Start Step
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- IN_PROGRESS: Parameter Form -->
+                        <div th:if="${step.status.name() == 'IN_PROGRESS'}">
+                            <form th:action="@{/execution/{batchId}/steps/{stepNum}/complete(batchId=${batch.id}, stepNum=${step.stepNumber})}"
+                                  method="post">
+                                <h5 class="mb-3">Enter Step Data</h5>
+
+                                <div th:if="${step.parameterValues.isEmpty()}" class="text-muted mb-3">
+                                    No parameters to enter for this step.
+                                </div>
+
+                                <div th:each="pv : ${step.parameterValues}" class="mb-3">
+                                    <label class="form-label">
+                                        <span th:text="${pv.stepParameter.name}"></span>
+                                        <span th:if="${pv.stepParameter.required}" class="text-danger">*</span>
+                                        <span th:if="${pv.stepParameter.unit}"
+                                              class="text-muted" th:text="${'(' + pv.stepParameter.unit + ')'}"></span>
+                                    </label>
+
+                                    <!-- TEXT input -->
+                                    <input th:if="${pv.stepParameter.parameterType.name() == 'TEXT'}"
+                                           type="text" class="form-control"
+                                           th:name="${'param_' + pv.stepParameter.id}"
+                                           th:required="${pv.stepParameter.required}">
+
+                                    <!-- NUMBER input -->
+                                    <div th:if="${pv.stepParameter.parameterType.name() == 'NUMBER'}">
+                                        <input type="number" step="any" class="form-control"
+                                               th:name="${'param_' + pv.stepParameter.id}"
+                                               th:min="${pv.stepParameter.minValue}"
+                                               th:max="${pv.stepParameter.maxValue}"
+                                               th:required="${pv.stepParameter.required}">
+                                        <div class="form-text"
+                                             th:if="${pv.stepParameter.minValue != null || pv.stepParameter.maxValue != null}">
+                                            Range:
+                                            <span th:text="${pv.stepParameter.minValue}"></span> ~
+                                            <span th:text="${pv.stepParameter.maxValue}"></span>
+                                            <span th:if="${pv.stepParameter.unit}" th:text="${pv.stepParameter.unit}"></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- BOOLEAN input -->
+                                    <select th:if="${pv.stepParameter.parameterType.name() == 'BOOLEAN'}"
+                                            class="form-select"
+                                            th:name="${'param_' + pv.stepParameter.id}"
+                                            th:required="${pv.stepParameter.required}">
+                                        <option value="">-- Select --</option>
+                                        <option value="true">Yes</option>
+                                        <option value="false">No</option>
+                                    </select>
+
+                                    <!-- DATETIME input -->
+                                    <input th:if="${pv.stepParameter.parameterType.name() == 'DATETIME'}"
+                                           type="datetime-local" class="form-control"
+                                           th:name="${'param_' + pv.stepParameter.id}"
+                                           th:required="${pv.stepParameter.required}">
+                                </div>
+
+                                <hr>
+
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="bi bi-check-circle me-2"></i>Complete Step
+                                    </button>
+                                    <a th:href="@{/execution/{id}(id=${batch.id})}" class="btn btn-outline-secondary">
+                                        Cancel
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- COMPLETED: Show Values -->
+                        <div th:if="${step.status.name() == 'COMPLETED'}">
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Step completed by <strong th:text="${step.operator?.name}"></strong>
+                                at <span th:text="${#temporals.format(step.completedAt, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                            </div>
+
+                            <h5 th:if="${!step.parameterValues.isEmpty()}">Recorded Values</h5>
+                            <table class="table" th:if="${!step.parameterValues.isEmpty()}">
+                                <thead>
+                                    <tr>
+                                        <th>Parameter</th>
+                                        <th>Value</th>
+                                        <th>Recorded At</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="pv : ${step.parameterValues}">
+                                        <td th:text="${pv.stepParameter.name}"></td>
+                                        <td>
+                                            <span th:text="${pv.value}"></span>
+                                            <span th:if="${pv.stepParameter.unit}"
+                                                  class="text-muted" th:text="${pv.stepParameter.unit}"></span>
+                                        </td>
+                                        <td th:text="${pv.inputAt != null ? #temporals.format(pv.inputAt, 'HH:mm:ss') : '-'}"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Side Info -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Step Info</h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Batch:</strong> <span th:text="${batch.batchNumber}"></span></p>
+                        <p><strong>Recipe:</strong> <span th:text="${batch.recipe.name}"></span></p>
+                        <hr>
+                        <p th:if="${step.operator}">
+                            <strong>Operator:</strong> <span th:text="${step.operator.name}"></span>
+                        </p>
+                        <p th:if="${step.startedAt}">
+                            <strong>Started:</strong>
+                            <span th:text="${#temporals.format(step.startedAt, 'HH:mm:ss')}"></span>
+                        </p>
+                        <p th:if="${step.completedAt}">
+                            <strong>Completed:</strong>
+                            <span th:text="${#temporals.format(step.completedAt, 'HH:mm:ss')}"></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a th:href="@{/execution/{id}(id=${batch.id})}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Batch
+            </a>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

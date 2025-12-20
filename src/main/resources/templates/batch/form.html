@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{layout/default :: layout(~{::content})}">
+    <div th:fragment="content">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-box-seam me-2"></i>Create New Batch
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${errorMessage}" class="alert alert-danger">
+                            <span th:text="${errorMessage}"></span>
+                        </div>
+
+                        <div th:if="${#lists.isEmpty(recipes)}" class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            No approved recipes available. Please approve a recipe first.
+                            <a th:href="@{/recipes}" class="alert-link">Go to Recipes</a>
+                        </div>
+
+                        <form th:action="@{/batches}" method="post" th:unless="${#lists.isEmpty(recipes)}">
+                            <div class="mb-3">
+                                <label for="recipeId" class="form-label">Select Recipe *</label>
+                                <select class="form-select" id="recipeId" name="recipeId" required>
+                                    <option value="">-- Select a Recipe --</option>
+                                    <option th:each="recipe : ${recipes}"
+                                            th:value="${recipe.id}"
+                                            th:text="${recipe.code + ' - ' + recipe.name + ' (v' + recipe.version + ')'}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="plannedQuantity" class="form-label">Planned Quantity</label>
+                                    <input type="number" step="0.01" class="form-control"
+                                           id="plannedQuantity" name="plannedQuantity"
+                                           placeholder="e.g., 1000">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="quantityUnit" class="form-label">Unit</label>
+                                    <select class="form-select" id="quantityUnit" name="quantityUnit">
+                                        <option value="">-- Select Unit --</option>
+                                        <option value="kg">kg</option>
+                                        <option value="g">g</option>
+                                        <option value="L">L</option>
+                                        <option value="mL">mL</option>
+                                        <option value="pcs">pcs</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-1"></i>Create Batch
+                                </button>
+                                <a th:href="@{/batches}" class="btn btn-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

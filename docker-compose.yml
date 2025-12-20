@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: ebr-postgres
+    environment:
+      POSTGRES_DB: ebr_db
+      POSTGRES_USER: ebr_user
+      POSTGRES_PASSWORD: ebr_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

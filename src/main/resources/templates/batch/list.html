@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<th:block th:replace="~{layout/default :: layout(~{::content})}">
+    <div th:fragment="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-box-seam me-2"></i>Batches</h2>
+            <a th:href="@{/batches/new}" class="btn btn-primary"
+               sec:authorize="hasAnyRole('ADMIN', 'SUPERVISOR')">
+                <i class="bi bi-plus-lg me-1"></i>New Batch
+            </a>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Batch Number</th>
+                            <th>Recipe</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Quantity</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="batch : ${batches}">
+                            <td>
+                                <a th:href="@{/batches/{id}(id=${batch.id})}" th:text="${batch.batchNumber}"></a>
+                            </td>
+                            <td>
+                                <span th:text="${batch.recipe.code}"></span>
+                                <small class="text-muted" th:text="${' - ' + batch.recipe.name}"></small>
+                            </td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="${batch.status.name() == 'CREATED'} ? 'bg-secondary' :
+                                                      (${batch.status.name() == 'RELEASED'} ? 'bg-primary' :
+                                                      (${batch.status.name() == 'IN_PROGRESS'} ? 'bg-warning text-dark' :
+                                                      (${batch.status.name() == 'COMPLETED'} ? 'bg-success' : 'bg-danger')))"
+                                      th:text="${batch.status}"></span>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px; width: 100px;">
+                                    <div class="progress-bar"
+                                         th:style="'width: ' + ${batch.progressPercentage} + '%'"
+                                         th:text="${batch.completedStepCount + '/' + batch.totalStepCount}">
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span th:if="${batch.plannedQuantity != null}">
+                                    <span th:text="${batch.plannedQuantity}"></span>
+                                    <span th:text="${batch.quantityUnit}"></span>
+                                </span>
+                            </td>
+                            <td th:text="${#temporals.format(batch.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                            <td>
+                                <a th:href="@{/batches/{id}(id=${batch.id})}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a th:if="${batch.status.name() == 'RELEASED' || batch.status.name() == 'IN_PROGRESS'}"
+                                   th:href="@{/execution/{id}(id=${batch.id})}"
+                                   class="btn btn-sm btn-outline-success"
+                                   sec:authorize="hasRole('OPERATOR')">
+                                    <i class="bi bi-play"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(batches)}">
+                            <td colspan="7" class="text-center text-muted py-4">
+                                No batches found. Create a new batch to get started.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<th:block th:replace="~{layout/default :: layout(~{::content})}">
+    <div th:fragment="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-journal-text me-2"></i>Master Recipes</h2>
+            <a th:href="@{/recipes/new}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">
+                <i class="bi bi-plus-lg me-1"></i>New Recipe
+            </a>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Version</th>
+                            <th>Status</th>
+                            <th>Steps</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="recipe : ${recipes}">
+                            <td>
+                                <a th:href="@{/recipes/{id}(id=${recipe.id})}" th:text="${recipe.code}"></a>
+                            </td>
+                            <td th:text="${recipe.name}"></td>
+                            <td th:text="${'v' + recipe.version}"></td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="${recipe.status.name() == 'DRAFT'} ? 'bg-secondary' :
+                                                      (${recipe.status.name() == 'APPROVED'} ? 'bg-success' : 'bg-danger')"
+                                      th:text="${recipe.status}"></span>
+                            </td>
+                            <td th:text="${recipe.steps.size()}"></td>
+                            <td th:text="${#temporals.format(recipe.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                            <td>
+                                <a th:href="@{/recipes/{id}(id=${recipe.id})}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(recipes)}">
+                            <td colspan="7" class="text-center text-muted py-4">
+                                No recipes found. Create your first recipe.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

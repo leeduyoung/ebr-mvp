@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:replace="~{layout/default :: layout(~{::content})}">
+    <div th:fragment="content">
+        <!-- Alerts -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h2>
+                    <i class="bi bi-play-circle me-2"></i>
+                    <span th:text="${batch.batchNumber}"></span>
+                </h2>
+                <p class="text-muted mb-0" th:text="${batch.recipe.code + ' - ' + batch.recipe.name}"></p>
+            </div>
+            <div>
+                <span class="badge fs-6"
+                      th:classappend="${batch.status.name() == 'RELEASED'} ? 'bg-primary' :
+                                      (${batch.status.name() == 'IN_PROGRESS'} ? 'bg-warning text-dark' : 'bg-success')"
+                      th:text="${batch.status}"></span>
+            </div>
+        </div>
+
+        <!-- Progress Card -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5>Execution Progress</h5>
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar bg-success"
+                                 th:style="'width: ' + ${batch.progressPercentage} + '%'">
+                                <span th:text="${batch.completedStepCount + ' / ' + batch.totalStepCount + ' completed'}"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="display-4" th:text="${#numbers.formatDecimal(batch.progressPercentage, 1, 0) + '%'}"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Batch Completed Message -->
+        <div th:if="${batch.status.name() == 'COMPLETED'}" class="alert alert-success">
+            <h4><i class="bi bi-check-circle me-2"></i>Batch Completed!</h4>
+            <p class="mb-0">All steps have been successfully executed.</p>
+        </div>
+
+        <!-- Steps List -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-list-ol me-2"></i>Execution Steps</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                <div th:each="step : ${batch.steps}" class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <!-- Step Number Badge -->
+                            <span class="badge me-3 fs-6"
+                                  th:classappend="${step.status.name() == 'COMPLETED'} ? 'bg-success' :
+                                                  (${step.status.name() == 'IN_PROGRESS'} ? 'bg-warning text-dark' : 'bg-secondary')"
+                                  th:text="${step.stepNumber}"></span>
+
+                            <!-- Step Info -->
+                            <div>
+                                <h6 class="mb-0" th:text="${step.recipeStep.name}"></h6>
+                                <small class="text-muted" th:text="${step.recipeStep.description}"></small>
+                            </div>
+                        </div>
+
+                        <!-- Status and Actions -->
+                        <div class="d-flex align-items-center gap-2">
+                            <!-- Status Badge -->
+                            <span class="badge"
+                                  th:classappend="${step.status.name() == 'PENDING'} ? 'bg-secondary' :
+                                                  (${step.status.name() == 'IN_PROGRESS'} ? 'bg-warning text-dark' :
+                                                  (${step.status.name() == 'COMPLETED'} ? 'bg-success' : 'bg-info'))"
+                                  th:text="${step.status}"></span>
+
+                            <!-- Completed Info -->
+                            <span th:if="${step.completedAt}" class="text-muted small">
+                                <i class="bi bi-check me-1"></i>
+                                <span th:text="${#temporals.format(step.completedAt, 'HH:mm')}"></span>
+                                by <span th:text="${step.operator?.name}"></span>
+                            </span>
+
+                            <!-- Action Button -->
+                            <a th:if="${step.status.name() == 'PENDING' || step.status.name() == 'IN_PROGRESS'}"
+                               th:href="@{/execution/{batchId}/steps/{stepNum}(batchId=${batch.id}, stepNum=${step.stepNumber})}"
+                               class="btn btn-sm"
+                               th:classappend="${step.status.name() == 'IN_PROGRESS'} ? 'btn-warning' : 'btn-outline-primary'">
+                                <span th:if="${step.status.name() == 'IN_PROGRESS'}">
+                                    <i class="bi bi-arrow-right-circle me-1"></i>Continue
+                                </span>
+                                <span th:if="${step.status.name() == 'PENDING'}">
+                                    <i class="bi bi-play me-1"></i>Start
+                                </span>
+                            </a>
+
+                            <!-- View completed step -->
+                            <a th:if="${step.status.name() == 'COMPLETED'}"
+                               th:href="@{/execution/{batchId}/steps/{stepNum}(batchId=${batch.id}, stepNum=${step.stepNumber})}"
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a th:href="@{/execution}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Batch List
+            </a>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

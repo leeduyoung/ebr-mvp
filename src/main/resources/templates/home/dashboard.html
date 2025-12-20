@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<th:block th:replace="~{layout/default :: layout(~{::content})}">
+    <div th:fragment="content">
+        <div class="mb-4">
+            <h2><i class="bi bi-speedometer2 me-2"></i>Dashboard</h2>
+            <p class="text-muted">Welcome, <span th:text="${user.name}"></span></p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-secondary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">Created</h6>
+                                <h2 class="mb-0" th:text="${createdCount}">0</h2>
+                            </div>
+                            <i class="bi bi-file-earmark-plus fs-1 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">Released</h6>
+                                <h2 class="mb-0" th:text="${releasedCount}">0</h2>
+                            </div>
+                            <i class="bi bi-check-circle fs-1 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">In Progress</h6>
+                                <h2 class="mb-0" th:text="${inProgressCount}">0</h2>
+                            </div>
+                            <i class="bi bi-hourglass-split fs-1 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-title">Completed</h6>
+                                <h2 class="mb-0" th:text="${completedCount}">0</h2>
+                            </div>
+                            <i class="bi bi-trophy fs-1 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Quick Actions for Operators -->
+            <div class="col-md-6" sec:authorize="hasRole('OPERATOR')">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Ready to Execute</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a th:each="batch : ${executableBatches}"
+                           th:href="@{/execution/{id}(id=${batch.id})}"
+                           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong th:text="${batch.batchNumber}"></strong>
+                                <small class="text-muted d-block" th:text="${batch.recipe.name}"></small>
+                            </div>
+                            <div>
+                                <span class="badge bg-primary me-2"
+                                      th:text="${batch.completedStepCount + '/' + batch.totalStepCount}"></span>
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </a>
+                        <div th:if="${#lists.isEmpty(executableBatches)}"
+                             class="list-group-item text-muted text-center py-4">
+                            No batches ready for execution
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin/Supervisor View -->
+            <div class="col-md-6" sec:authorize="hasAnyRole('ADMIN', 'SUPERVISOR')">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Batches</h5>
+                        <a th:href="@{/batches}" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a th:each="batch : ${recentBatches}"
+                           th:href="@{/batches/{id}(id=${batch.id})}"
+                           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong th:text="${batch.batchNumber}"></strong>
+                                <small class="text-muted d-block" th:text="${batch.recipe.name}"></small>
+                            </div>
+                            <span class="badge"
+                                  th:classappend="${batch.status.name() == 'CREATED'} ? 'bg-secondary' :
+                                                  (${batch.status.name() == 'RELEASED'} ? 'bg-primary' :
+                                                  (${batch.status.name() == 'IN_PROGRESS'} ? 'bg-warning text-dark' :
+                                                  (${batch.status.name() == 'COMPLETED'} ? 'bg-success' : 'bg-danger')))"
+                                  th:text="${batch.status}"></span>
+                        </a>
+                        <div th:if="${#lists.isEmpty(recentBatches)}"
+                             class="list-group-item text-muted text-center py-4">
+                            No batches yet
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-grid me-2"></i>Quick Links</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-6" sec:authorize="hasAnyRole('ADMIN', 'SUPERVISOR')">
+                                <a th:href="@{/recipes}" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-journal-text me-1"></i>Recipes
+                                    <span class="badge bg-primary ms-1" th:text="${approvedRecipes}"></span>
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a th:href="@{/batches}" class="btn btn-outline-secondary w-100">
+                                    <i class="bi bi-box-seam me-1"></i>Batches
+                                </a>
+                            </div>
+                            <div class="col-6" sec:authorize="hasAnyRole('ADMIN', 'SUPERVISOR')">
+                                <a th:href="@{/batches/new}" class="btn btn-outline-success w-100">
+                                    <i class="bi bi-plus-lg me-1"></i>New Batch
+                                </a>
+                            </div>
+                            <div class="col-6" sec:authorize="hasRole('OPERATOR')">
+                                <a th:href="@{/execution}" class="btn btn-outline-success w-100">
+                                    <i class="bi bi-play-circle me-1"></i>Execute
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>
