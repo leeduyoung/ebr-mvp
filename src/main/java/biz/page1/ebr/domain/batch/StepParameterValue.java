@@ -29,7 +29,7 @@ public class StepParameterValue {
     @JoinColumn(name = "step_parameter_id", nullable = false)
     private StepParameter stepParameter;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "param_value", columnDefinition = "TEXT")
     private String value;
 
     private LocalDateTime inputAt;

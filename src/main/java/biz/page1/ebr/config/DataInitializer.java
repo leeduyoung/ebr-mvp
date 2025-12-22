@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@org.springframework.context.annotation.Profile("!test")
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;

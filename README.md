@@ -146,7 +146,52 @@ sequenceDiagram
 
 ---
 
-## 7. 시작하기
+## 7. 도메인 엔티티 연관관계 (Entity Relationships)
+
+시스템의 핵심 엔티티 간의 관계를 다이어그램과 함께 정리합니다.
+
+### 7.1. ER 다이어그램 (ERD)
+```mermaid
+erDiagram
+    USER ||--o{ MASTER_RECIPE : "creates"
+    USER ||--o{ BATCH : "creates"
+    USER }o--o{ QUALIFICATION : "possesses"
+    USER ||--o{ BATCH_STEP : "operates"
+    USER ||--o{ STEP_PARAMETER_VALUE : "records"
+
+    MASTER_RECIPE ||--o{ RECIPE_STEP : "contains"
+    RECIPE_STEP }o--o{ QUALIFICATION : "requires"
+    RECIPE_STEP ||--o{ STEP_PARAMETER : "defines"
+
+    MASTER_RECIPE ||--o{ BATCH : "instantiates"
+    BATCH ||--o{ BATCH_STEP : "consists of"
+    
+    BATCH_STEP ||--o{ STEP_PARAMETER_VALUE : "contains"
+    BATCH_STEP }o--|| RECIPE_STEP : "derived from"
+    STEP_PARAMETER_VALUE }o--|| STEP_PARAMETER : "values for"
+```
+
+### 7.2. 주요 연관관계 상세 설명
+
+#### 1) 사용자 및 자격 (User & Qualification)
+*   **User ↔ Qualification (N:M)**: 작업자는 여러 개의 전문 자격(Weighing, Mixing 등)을 가질 수 있으며, 하나의 자격은 여러 작업자에게 부여될 수 있습니다. (`@ManyToMany`)
+*   **User ↔ MasterRecipe/Batch (1:N)**: 한 명의 관리자/감독자는 여러 개의 레시피나 배치를 생성할 수 있습니다. (`@ManyToOne`)
+
+#### 2) 레시피 구조 (Recipe Structure)
+*   **MasterRecipe ↔ RecipeStep (1:N)**: 하나의 표준 레시피는 여러 개의 공정 단계(Step)로 구성됩니다. (`@OneToMany`)
+*   **RecipeStep ↔ Qualification (N:M)**: 특정 공정 단계는 하나 이상의 자격 요건을 요구할 수 있습니다. (`@ManyToMany`)
+*   **RecipeStep ↔ StepParameter (1:N)**: 각 공정 단계는 기록해야 할 여러 개의 파라미터(무게, 온도 등)를 정의합니다. (`@OneToMany`)
+
+#### 3) 배치 및 실행 (Batch & Execution)
+*   **Batch ↔ MasterRecipe (N:1)**: 하나의 레시피로부터 여러 개의 제조 배치(Batch)가 생성될 수 있습니다. (`@ManyToOne`)
+*   **Batch ↔ BatchStep (1:N)**: 하나의 배치는 레시피의 단계를 복제한 여러 개의 실행 단계로 구성됩니다. (`@OneToMany`)
+*   **BatchStep ↔ RecipeStep (N:1)**: 배치 스텝은 원본이 되는 레시피 스텝 정보를 참조합니다. (`@ManyToOne`)
+*   **BatchStep ↔ StepParameterValue (1:N)**: 실행 단계에서 각 파라미터에 대해 입력된 실제 값들을 관리합니다. (`@OneToMany`)
+*   **StepParameterValue ↔ StepParameter (N:1)**: 기록된 값은 레시피에 정의된 파라미터 정의를 참조하여 유효성을 검증합니다. (`@ManyToOne`)
+
+---
+
+## 8. 시작하기
 
 ### 데이터베이스 설정
 Docker Compose를 사용하여 PostgreSQL을 실행합니다:
@@ -163,6 +208,6 @@ docker-compose up -d
 
 ---
 
-## 8. 개발 시 주의사항 (Troubleshooting)
+## 9. 개발 시 주의사항 (Troubleshooting)
 - **Thymeleaf 3.1+**: `#request` 객체 접근이 제한되어 있으므로 `GlobalControllerAdvice`에서 제공하는 `currentUri` 변수를 사용하십시오.
 - **Lazy Loading**: 사용자 자격 요건(`qualifications`) 접근 시 `LazyInitializationException` 방지를 위해 `UserRepository`의 페치 조인을 활용하십시오.
