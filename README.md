@@ -196,7 +196,7 @@ erDiagram
 ### 데이터베이스 설정
 Docker Compose를 사용하여 PostgreSQL을 실행합니다:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### 테스트 계정
